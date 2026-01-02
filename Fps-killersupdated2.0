@@ -1,0 +1,565 @@
+-- 🌐 N7GHTSWARE HUB (AntiLag Total + Desync Clonador + DESYNC V1.5 + Walk Block + Speed Boost + Teleguiado)
+-- By ServerMoreira 
+
+local Players = game:GetService("Players")
+
+local RunService = game:GetService("RunService")
+
+local Lighting = game:GetService("Lighting")
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+
+local LocalPlayer = player
+
+local camera = workspace.CurrentCamera  -- Para teleguiado
+
+local char = player.Character or player.CharacterAdded:Wait()
+
+local root = char:WaitForChild("HumanoidRootPart")
+
+local flying = false
+
+local flySpeed = 26
+
+-- 🧠 FPS Boost seguro
+Lighting.GlobalShadows = false
+
+Lighting.FogEnd = 1000
+
+settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+
+-- 🧹 Limpieza visual local (solo tu personaje)
+for _, item in ipairs(char:GetChildren()) do
+
+	if item:IsA("Accessory") or item:IsA("Hat") or item:IsA("ShirtGraphic") or item:IsA("Shirt") or item:IsA("Pants") or item:IsA("CharacterMesh") then  item:Destroy()
+
+	end
+
+end
+
+-- 🎨 GUI estilo Neon Rojo Movible (AUMENTADO PARA 4 BOTONES)
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "Moreira_UI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 250, 0, 200)  -- Aumentado para el botón extra
+frame.Position = UDim2.new(1, -270, 0, 20)
+frame.BackgroundColor3 = Color3.fromRGB(30, 0, 0)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+frame.BackgroundTransparency = 0.2
+frame.Active = true
+frame.Draggable = true
+
+local glow = Instance.new("UIStroke", frame)
+glow.Thickness = 3
+glow.Color = Color3.fromRGB(255, 0, 0)
+glow.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
+
+local focusLight = Instance.new("Frame")
+focusLight.Size = UDim2.new(0, 14, 0, 14)
+focusLight.Position = UDim2.new(0, 10, 0, 10)
+focusLight.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+focusLight.BorderSizePixel = 0
+focusLight.Parent = frame
+Instance.new("UICorner", focusLight).CornerRadius = UDim.new(1, 0)
+
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1, -30, 0, 25)
+	title.Position = UDim2.new(0, 30, 0, 5)
+	title.BackgroundTransparency = 1
+	title.Text = "N7GHTSWARE HUB"
+	title.Font = Enum.Font.GothamBold
+	title.TextColor3 = Color3.fromRGB(255, 0, 0)
+	title.TextStrokeTransparency = 0
+	title.TextScaled = true
+	title.Parent = frame
+	
+	local subtitle = Instance.new("TextLabel")
+	subtitle.Size = UDim2.new(1, -30, 0, 20)
+	subtitle.Position = UDim2.new(0, 30, 0, 30)
+	subtitle.BackgroundTransparency = 1
+	subtitle.Text = "tiktok: dxvz7dt 👑"
+	subtitle.Font = Enum.Font.GothamSemibold
+	subtitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+	subtitle.TextScaled = true
+	subtitle.Parent = frame
+
+	-- Efecto Rainbow para el subtítulo
+	task.spawn(function()
+		local hue = 0
+		while true do
+			subtitle.TextColor3 = Color3.fromHSV(hue, 1, 1)
+			hue = hue + 0.01
+			if hue > 1 then hue = 0 end
+			task.wait(0.05)
+		end
+	end)
+
+-- Función para crear botones
+local function createButton(text, yPosition)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0.85, 0, 0, 30)
+	btn.Position = UDim2.new(0.075, 0, 0, yPosition)
+	btn.Text = text
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 16
+	btn.TextColor3 = Color3.new(1,1,1)
+	btn.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
+	btn.Parent = frame
+	
+	local corner = Instance.new("UICorner", btn)
+	corner.CornerRadius = UDim.new(0, 8)
+	
+	local stroke = Instance.new("UIStroke", btn)
+	stroke.Thickness = 2
+	stroke.Color = Color3.fromRGB(255, 0, 0)
+	
+	return btn
+end
+
+-- Botones principales (CON TELEGUIADO AGREGADO)
+local lagBtn = createButton("LAG: OFF", 55)
+local desyncBtn = createButton("DESYNC V1.5: OFF", 90)
+local speedBtn = createButton("SPEED: OFF", 125)
+local flyBtn = createButton("TELEGUIADO OFF", 160)
+
+-- ⚙️ Configuración
+local lagOn = false
+local desyncV3Active = false
+local speedBoostActive = false
+
+-- 🏃‍♂️ SISTEMA DE SPEED BOOST (SIN TIRONES ATRÁS)
+local originalWalkSpeed = 16
+local speedBoostConnection = nil
+
+local function applySpeedBoost()
+    if speedBoostConnection then return end
+    
+    speedBoostConnection = RunService.Heartbeat:Connect(function()
+        if speedBoostActive and LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = 50
+            end
+        end
+    end)
+end
+
+local function removeSpeedBoost()
+    if speedBoostConnection then
+        speedBoostConnection:Disconnect()
+        speedBoostConnection = nil
+    end
+    
+    if LocalPlayer.Character then
+        local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = originalWalkSpeed
+        end
+    end
+end
+
+-- 🚫 SISTEMA DE BLOQUEO DE ANIMACIONES
+local isWalkBlocked = false
+local emptyAnimationId = "rbxassetid://"
+local originalAnimationIds = {
+    Walk = nil,
+    Run = nil,
+    Idle1 = nil,
+    Idle2 = nil,
+}
+
+local function getAnimateParts(char)
+    local animate = char:FindFirstChild("Animate")
+    if not animate or not animate:IsA("LocalScript") then return nil end
+    local parts = {}
+    
+    local walk = animate:FindFirstChild("walk")
+    if walk and walk:FindFirstChild("WalkAnim") then parts.WalkAnim = walk.WalkAnim end
+    
+    local run = animate:FindFirstChild("run")
+    if run and run:FindFirstChild("RunAnim") then parts.RunAnim = run.RunAnim end
+    
+    local idle = animate:FindFirstChild("idle")
+    if idle then
+        parts.Idle1 = idle:FindFirstChild("Animation1") 
+        parts.Idle2 = idle:FindFirstChild("Animation2")
+    end
+    return parts
+end
+
+local function applyAnimationBlock(char)
+    local parts = getAnimateParts(char)
+    if not parts then return end
+    
+    if parts.WalkAnim and not originalAnimationIds.Walk then originalAnimationIds.Walk = parts.WalkAnim.AnimationId end
+    if parts.RunAnim and not originalAnimationIds.Run then originalAnimationIds.Run = parts.RunAnim.AnimationId end
+    if parts.Idle1 and not originalAnimationIds.Idle1 then originalAnimationIds.Idle1 = parts.Idle1.AnimationId end
+    
+    if parts.WalkAnim then parts.WalkAnim.AnimationId = emptyAnimationId end
+    if parts.RunAnim then parts.RunAnim.AnimationId = emptyAnimationId end
+    if parts.Idle1 then parts.Idle1.AnimationId = emptyAnimationId end
+    if parts.Idle2 then parts.Idle2.AnimationId = emptyAnimationId end 
+end
+
+local function restoreAnimationBlock(char)
+    local parts = getAnimateParts(char)
+    if not parts then return end
+    
+    if parts.WalkAnim and originalAnimationIds.Walk then parts.WalkAnim.AnimationId = originalAnimationIds.Walk end
+    if parts.RunAnim and originalAnimationIds.Run then parts.RunAnim.AnimationId = originalAnimationIds.Run end
+    if parts.Idle1 and originalAnimationIds.Idle1 then parts.Idle1.AnimationId = originalAnimationIds.Idle1 end
+    
+    local humanoid = char:FindFirstChild("Humanoid")
+    if humanoid then
+        local currentSpeed = humanoid.WalkSpeed
+        humanoid.WalkSpeed = 0
+        task.wait(0.1)
+        humanoid.WalkSpeed = currentSpeed
+    end
+end
+
+local function setWalkAnimationBlocked(shouldBlock)
+    isWalkBlocked = shouldBlock
+    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    if shouldBlock then
+        applyAnimationBlock(character)
+    else
+        restoreAnimationBlock(character)
+    end
+end
+
+-- 🔥 DESYNC V1.5 (SUAVE SIN TIRONES ATRÁS)
+local function DesyncV3()
+    local flags = {
+        {"GameNetPVHeaderRotationalVelocityZeroCutoffExponent", "-5000"},
+        {"LargeReplicatorWrite5", "true"},
+        {"LargeReplicatorEnabled9", "true"},
+        {"AngularVelociryLimit", "360"},
+        {"TimestepArbiterVelocityCriteriaThresholdTwoDt", "2147483646"},
+        {"S2PhysicsSenderRate", "15000"},
+        {"DisableDPIScale", "true"},
+        {"MaxDataPacketPerSend", "2147483647"},
+        {"ServerMaxBandwith", "52"},
+        {"PhysicsSenderMaxBandwidthBps", "20000"},
+        {"MaxTimestepMultiplierBuoyancy", "2147483647"},
+        {"SimOwnedNOUCountThresholdMillionth", "2147483647"},
+        {"MaxMissedWorldStepsRemembered", "-2147483648"},
+        {"CheckPVDifferencesForInterpolationMinVelThresholdStudsPerSecHundredth", "1"},
+        {"StreamJobNOUVolumeLengthCap", "2147483647"},
+        {"DebugSendDistInSteps", "-2147483648"},
+        {"MaxTimestepMultiplierAcceleration", "2147483647"},
+        {"LargeReplicatorRead5", "true"},
+        {"SimExplicitlyCappedTimestepMultiplier", "2147483646"},
+        {"GameNetDontSendRedundantNumTimes", "1"},
+        {"CheckPVLinearVelocityIntegrateVsDeltaPositionThresholdPercent", "1"},
+        {"CheckPVCachedRotVelThresholdPercent", "10"},
+        {"LargeReplicatorSerializeRead3", "true"},
+        {"ReplicationFocusNouExtentsSizeCutoffForPauseStuds", "2147483647"},
+        {"NextGenReplicatorEnabledWrite4", "true"},
+        {"CheckPVDifferencesForInterpolationMinRotVelThresholdRadsPerSecHundredth", "1"},
+        {"GameNetDontSendRedundantDeltaPositionMillionth", "1"},
+        {"InterpolationFrameVelocityThresholdMillionth", "5"},
+        {"StreamJobNOUVolumeCap", "2147483647"},
+        {"InterpolationFrameRotVelocityThresholdMillionth", "5"},
+        {"WorldStepMax", "30"},
+        {"TimestepArbiterHumanoidLinearVelThreshold", "1"},
+        {"InterpolationFramePositionThresholdMillionth", "5"},
+        {"TimestepArbiterHumanoidTurningVelThreshold", "1"},
+        {"MaxTimestepMultiplierContstraint", "2147483647"},
+        {"GameNetPVHeaderLinearVelocityZeroCutoffExponent", "-5000"},
+        {"CheckPVCachedVelThresholdPercent", "10"},
+        {"TimestepArbiterOmegaThou", "1073741823"},
+        {"MaxAcceptableUpdateDelay", "1"},
+        {"LargeReplicatorSerializeWrite4", "true"},
+    }
+
+    for _, data in ipairs(flags) do
+        pcall(function()
+            setfflag(data[1], data[2])
+        end)
+    end
+
+    local char = LocalPlayer.Character
+    if not char then return end
+    local humanoid = char:FindFirstChildWhichIsA("Humanoid")
+    if humanoid then
+        humanoid:ChangeState(Enum.HumanoidStateType.Dead)
+    end
+    char:ClearAllChildren()
+    local fakeModel = Instance.new("Model", workspace)
+    LocalPlayer.Character = fakeModel
+    task.wait()
+    LocalPlayer.Character = char
+    fakeModel:Destroy()
+end
+
+local function FastQuantumCloner()
+    local Backpack = LocalPlayer:WaitForChild("Backpack")
+    local cloner = Backpack:FindFirstChild("Quantum Cloner") or (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Quantum Cloner"))
+    if not cloner then
+        return false
+    end
+    LocalPlayer.Character.Humanoid:EquipTool(cloner)
+    task.wait(0.2) 
+    local packages = ReplicatedStorage:WaitForChild("Packages", 5)
+    if not packages then return false end
+    local netFolder = packages:WaitForChild("Net", 5)
+    if not netFolder then return false end
+    local useItemRemote = netFolder:FindFirstChild("RE/UseItem")
+    local teleportRemote = netFolder:FindFirstChild("RE/QuantumCloner/OnTeleport")
+    if not useItemRemote or not teleportRemote then return false end
+    useItemRemote:FireServer() 
+    task.wait(0.1)
+    teleportRemote:FireServer() 
+    return true
+end
+
+local function DesyncV3Start()
+    DesyncV3()
+    task.wait(0.5)
+    FastQuantumCloner()
+end
+
+local function toggleDesyncV3()
+    desyncV3Active = not desyncV3Active
+    
+    if desyncV3Active then
+        desyncBtn.Text = "DESYNC V1.5: ON"
+        desyncBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        DesyncV3Start()
+    else
+        desyncBtn.Text = "DESYNC V1.5: OFF"
+        desyncBtn.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
+    end
+end
+
+-- 🔒 Protección de herramientas
+local function keepToolsEquipped()
+	task.spawn(function()
+		while lagOn do
+			local currentCharacter = player.Character
+			if currentCharacter then
+				local backpack = player:FindFirstChild("Backpack")
+					local toolsToEquip = {
+						-- Slaps (Guantes)
+						"Slap", "Iron Slap", "Gold Slap", "Diamond Slap", "Emerald Slap", 
+						"Ruby Slap", "Dark Matter Slap", "Flame Slap", "Galaxy Slap", 
+						"Glitched Slap", "Splatter Slap", "Paintball Gun", "Radioactive Slap", 
+						"Nuclear Slap", "Slap Rubi", "Gold slap", "Emerald Slap",
+						-- Gears & Tools (Herramientas)
+						"Quantum Cloner", "Lase Cape", "Invisibility Cloak", "All Seeing Sentry", 
+						"Rainbowrath Sword", "Body Swap Potion", "Bat", "Medusa's Head", 
+						"Flying Carpet", "Candy Slap", "Gummy Bear", "SubSpace Mine", 
+						"Microphone", "Hive", "Speed Coil", "Gravity Coil", "Coil Combo", 
+						"Trap", "Bee Launcher", "Rage Table", "Grapple Gun", "Taser", 
+						"Boogie Bomb", "Web Slinger", "Teleportation Potion", "Jetpack", 
+						"Energy Drink", "Shield", "Hammer", "Sword", "Bow", "Crossbow"
+					}
+				for _, toolName in ipairs(toolsToEquip) do
+					local hasTool = currentCharacter:FindFirstChild(toolName)
+					local toolInBackpack = backpack and backpack:FindFirstChild(toolName)
+					if not hasTool and toolInBackpack then
+						toolInBackpack.Parent = currentCharacter
+					end
+				end
+			end
+			task.wait(0.5)
+		end
+	end)
+end
+
+-- 🌀 DESYNC CLONADOR (SIN TELEPORT)
+local function enableMobileDesync()
+	local success, err = pcall(function()
+  local backpack = LocalPlayer:WaitForChild("Backpack")
+  local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+  local humanoid = character:WaitForChild("Humanoid")
+  local packages = ReplicatedStorage:FindFirstChild("Packages")
+  if not packages then return end
+  local netFolder = packages:FindFirstChild("Net")
+  if not netFolder then return end
+  local useItemRemote = netFolder:FindFirstChild("RE/UseItem")
+  if not useItemRemote then return end
+  local tool
+  for _, t in ipairs({"Quantum Cloner", "Brainrot", "brainrot"}) do
+   tool = backpack:FindFirstChild(t) or character:FindFirstChild(t)
+   if tool then break end
+  end
+  if not tool then
+   for _, i in ipairs(backpack:GetChildren()) do
+    if i:IsA("Tool") then tool = i break end
+   end
+  end
+  if tool and tool.Parent == backpack then
+   humanoid:EquipTool(tool)
+   task.wait(0.5)
+  end
+  useItemRemote:FireServer()
+  task.wait(0.5)
+	end)
+	if not success then warn("❌ Error Desync Clonador:", err) end
+end
+
+-- 🧩 Botones principales
+lagBtn.MouseButton1Click:Connect(function()
+	lagOn = not lagOn
+	
+	if lagOn then
+  lagBtn.Text = "LAG: ON"
+  lagBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+  focusLight.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+  
+  -- MODIFICACIÓN SOLICITADA:
+  -- 1. Equipar Quantum Cloner primero
+  local backpack = LocalPlayer:WaitForChild("Backpack")
+  local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+  local humanoid = character:WaitForChild("Humanoid")
+  local cloner = backpack:FindFirstChild("Quantum Cloner") or character:FindFirstChild("Quantum Cloner")
+  
+  if cloner then
+      humanoid:EquipTool(cloner)
+      task.wait(0.3)
+  end
+  
+  -- 2. Agarrar todos los tools de protección
+  local toolsToEquip = {
+      "Slap", "Iron Slap", "Gold Slap", "Diamond Slap", "Emerald Slap", 
+      "Ruby Slap", "Dark Matter Slap", "Flame Slap", "Galaxy Slap", 
+      "Glitched Slap", "Splatter Slap", "Paintball Gun", "Radioactive Slap", 
+      "Nuclear Slap", "Slap Rubi", "Gold slap", "Emerald Slap",
+      "Quantum Cloner", "Lase Cape", "Invisibility Cloak", "All Seeing Sentry", 
+      "Rainbowrath Sword", "Body Swap Potion", "Bat", "Medusa's Head", 
+      "Flying Carpet", "Candy Slap", "Gummy Bear", "SubSpace Mine", 
+      "Microphone", "Hive", "Speed Coil", "Gravity Coil", "Coil Combo", 
+      "Trap", "Bee Launcher", "Rage Table", "Grapple Gun", "Taser", 
+      "Boogie Bomb", "Web Slinger", "Teleportation Potion", "Jetpack", 
+      "Energy Drink", "Shield", "Hammer", "Sword", "Bow", "Crossbow"
+  }
+  
+  for _, toolName in ipairs(toolsToEquip) do
+      local toolInBackpack = backpack:FindFirstChild(toolName)
+      if toolInBackpack then
+          toolInBackpack.Parent = character
+      end
+  end
+  task.wait(0.3)
+  
+  -- 3. Hacer un clon con Quantum Cloner
+  if cloner then
+      local packages = ReplicatedStorage:FindFirstChild("Packages")
+      local netFolder = packages and packages:FindFirstChild("Net")
+      local useItemRemote = netFolder and netFolder:FindFirstChild("RE/UseItem")
+      if useItemRemote then
+          useItemRemote:FireServer()
+      end
+  end
+
+  keepToolsEquipped()
+  -- enableMobileDesync() -- Se comenta o elimina porque ya hicimos la lógica arriba
+  setWalkAnimationBlocked(true)
+	else
+  lagBtn.Text = "LAG: OFF"
+  lagBtn.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
+  focusLight.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+  setWalkAnimationBlocked(false)
+	end
+end)
+
+desyncBtn.MouseButton1Click:Connect(function()
+    toggleDesyncV3()
+end)
+
+speedBtn.MouseButton1Click:Connect(function()
+    speedBoostActive = not speedBoostActive
+    
+    if speedBoostActive then
+        speedBtn.Text = "SPEED: ON"
+        speedBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        applySpeedBoost()
+    else
+        speedBtn.Text = "SPEED: OFF"
+        speedBtn.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
+        removeSpeedBoost()
+    end
+end)
+
+-- TELEGUIADO (AGREGADO SIN MODIFICAR NADA MÁS)
+flyBtn.MouseButton1Click:Connect(function()
+    flying = not flying
+    flyBtn.Text = flying and "TELEGUIADO ON" or "TELEGUIADO OFF"
+    flyBtn.BackgroundColor3 = flying and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(50, 0, 0)
+    if flying then
+        spawn(function()
+            while flying and root do
+                root.Velocity = camera.CFrame.LookVector * flySpeed
+                task.wait()
+            end
+        end)
+    else
+        root.Velocity = Vector3.new(0,0,0)
+    end
+end)
+
+-- CONEXIÓN DE CAMBIO DE PERSONAJE
+LocalPlayer.CharacterAdded:Connect(function(newCharacter)
+    char = newCharacter
+    root = char:WaitForChild("HumanoidRootPart")
+    
+    newCharacter:WaitForChild("Humanoid")
+    task.wait(0.2)
+    
+    local humanoid = newCharacter:FindFirstChild("Humanoid")
+    if humanoid then
+        originalWalkSpeed = humanoid.WalkSpeed
+    end
+    
+    applyAnimationBlock(newCharacter)
+    restoreAnimationBlock(newCharacter)
+    
+    if isWalkBlocked then
+        applyAnimationBlock(newCharacter)
+    end
+    
+    if speedBoostActive then
+        task.wait(0.5)
+        applySpeedBoost()
+    end
+end)
+
+-- 🧹 Limpieza global
+task.spawn(function()
+	while true do
+  for _, model in ipairs(workspace:GetChildren()) do
+   if model:IsA("Model") and model:FindFirstChildOfClass("Humanoid") then
+    for _, item in ipairs(model:GetChildren()) do
+     if item:IsA("Accessory") or item:IsA("Hat") or item:IsA("CharacterMesh")
+     or item:IsA("Shirt") or item:IsA("Pants") or item:IsA("ShirtGraphic")
+     or item:IsA("Face") then
+      item:Destroy()
+     end
+    end
+   end
+  end
+  task.wait(0.3)
+	end
+end)
+
+-- Limpiar al cerrar
+game:GetService("UserInputService").WindowFocusReleased:Connect(function()
+    if speedBoostActive then
+        removeSpeedBoost()
+        speedBtn.Text = "SPEED: OFF"
+        speedBtn.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
+        speedBoostActive = false
+    end
+end)
+
+	print("[N7GHTSWARE HUB] Cargado - tiktok: dxvz7dt 👑")
